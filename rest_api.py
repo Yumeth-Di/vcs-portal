@@ -13,7 +13,7 @@ def get_connection():
     try:
         conn = mysql.connector.connect(
             host="vcs-portal.c3ca6wcasv9c.ap-southeast-1.rds.amazonaws.com",
-            user="RDS",
+            user="admin",
             password="Yumeth#696", 
             database="student"
         )
