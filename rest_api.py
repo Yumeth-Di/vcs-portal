@@ -12,8 +12,8 @@ CORS(app)
 def get_connection():
     try:
         conn = mysql.connector.connect(
-            host="database-1.c3ca6wcasv9c.ap-southeast-1.rds.amazonaws.com",
-            user="admin",
+            host="localhost",
+            user="root",
             password="Yumeth#696", 
             database="student"
         )
