@@ -553,7 +553,7 @@ def get_student_questions(student_id):
             ORDER BY q.created_at DESC
         """, (student_id,))
         questions = cursor.fetchall()
-        print(f"Found {len(questions)} questions for student {student_id}")
+        
         
         # For each question, get the answer if exists
         for q in questions:
