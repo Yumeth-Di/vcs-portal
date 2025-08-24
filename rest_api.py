@@ -164,7 +164,7 @@ def login():
     if user['role'] == 'teacher':
         cursor.execute("SELECT teacher_id FROM teachers WHERE user_id = %s", (user['id'],))
         teacher = cursor.fetchone()
-        user['teacher_id'] = teacher['user_id'] if teacher else None
+        user['teacher_id'] = teacher['teacher_id'] if teacher else None
 
     cursor.close()
     conn.close()
