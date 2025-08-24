@@ -162,7 +162,7 @@ def login():
 
     # If role is teacher, also fetch teacher_id
     if user['role'] == 'teacher':
-        cursor.execute("SELECT user_id FROM teachers WHERE user_id = %s", (user['id'],))
+        cursor.execute("SELECT teacher_id FROM teachers WHERE user_id = %s", (user['id'],))
         teacher = cursor.fetchone()
         user['teacher_id'] = teacher['user_id'] if teacher else None
 
