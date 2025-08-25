@@ -435,7 +435,7 @@ def get_questions():
         """)
         
         questions = cursor.fetchall()
-        print(f"Found {len(questions)} questions")
+       
         
         # Format datetime for JSON serialization
         for q in questions:
@@ -443,7 +443,7 @@ def get_questions():
         
         return jsonify(questions)
     except Exception as e:
-        print(f"Error getting questions: {e}")
+        
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cursor.close()
@@ -577,7 +577,7 @@ def get_student_questions(student_id):
                 q['answer'] = None
                 print(f"No answer for question {q['id']}")
         
-        print(f"Returning {len(questions)} questions for student {student_id}")
+       
         return jsonify(questions)
     except Exception as e:
         print(f"Error getting student questions: {e}")
@@ -613,7 +613,7 @@ def get_teacher_questions(teacher_id):
         
         return jsonify(questions)
     except Exception as e:
-        print(f"Error getting teacher questions: {e}")
+        
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cursor.close()
