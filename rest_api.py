@@ -557,7 +557,7 @@ def get_student_questions(student_id):
         
         # For each question, get the answer if exists
         for q in questions:
-            print(f"Processing question {q['id']}")
+            
             cursor.execute("""
                 SELECT a.content, a.created_at, t.teacher_name 
                 FROM answers a
@@ -572,15 +572,15 @@ def get_student_questions(student_id):
             if answer:
                 answer['created_at'] = answer['created_at'].strftime('%Y-%m-%d %H:%M:%S')
                 q['answer'] = answer
-                print(f"Found answer for question {q['id']}: {answer['content']}")
+                
             else:
                 q['answer'] = None
-                print(f"No answer for question {q['id']}")
+                
         
        
         return jsonify(questions)
     except Exception as e:
-        print(f"Error getting student questions: {e}")
+        
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cursor.close()
@@ -605,7 +605,7 @@ def get_teacher_questions(teacher_id):
             ORDER BY q.created_at DESC
         """, (teacher_id,))
         questions = cursor.fetchall()
-        print(f"Found {len(questions)} questions for teacher {teacher_id}")
+        
         
         # Format datetime for JSON serialization
         for q in questions:
