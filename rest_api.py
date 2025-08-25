@@ -59,7 +59,7 @@ def init_db():
                 print("Added teacher_id column to questions table")
                 conn.commit()
             except Exception as e:
-                print(f"Error adding teacher_id column: {e}")
+                
                 conn.rollback()
         
         # Create answers table if it doesn't exist
@@ -75,9 +75,9 @@ def init_db():
         """)
         
         conn.commit()
-        print("Database initialized successfully")
+        
     except Exception as e:
-        print(f"Error initializing database: {e}")
+        
         conn.rollback()
     finally:
         cursor.close()
@@ -337,7 +337,7 @@ def get_student_id():
         
         return jsonify({'student_id': student['student_id']})
     except Exception as e:
-        print("Error:", e)
+        
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cursor.close()
@@ -367,7 +367,7 @@ def get_teacher_id():
         
         return jsonify({'teacher_id': user['id']})
     except Exception as e:
-        print("Error:", e)
+        
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cursor.close()
@@ -402,17 +402,17 @@ def submit_question():
             
             conn.commit()
             question_id = cursor.lastrowid
-            print(f"Question inserted with ID: {question_id}")
+           
             return jsonify({'status': 'success', 'question_id': question_id}), 201
         except Exception as e:
             conn.rollback()
-            print(f"Error submitting question: {e}")
+           
             return jsonify({'status': 'error', 'message': str(e)}), 500
         finally:
             cursor.close()
             conn.close()
     except Exception as e:
-        print(f"Unexpected error in submit_question: {e}")
+       
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # Teacher: Get all questions
@@ -457,7 +457,7 @@ def submit_answer():
     teacher_id = data.get('teacher_id')
     content = data.get('content')
     
-    print(f"Submitting answer: question_id={question_id}, teacher_id={teacher_id}, content={content}")
+   
     
     if not question_id or not teacher_id or not content:
         return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
@@ -473,14 +473,14 @@ def submit_answer():
             "INSERT INTO answers (question_id, teacher_id, content) VALUES (%s, %s, %s)",
             (question_id, teacher_id, content)
         )
-        print("Answer inserted successfully")
+       
         
         # Update question status to 'answered'
         cursor.execute(
             "UPDATE questions SET status = 'answered' WHERE id = %s",
             (question_id,)
         )
-        print("Question status updated to 'answered'")
+       
         
         conn.commit()
         return jsonify({
@@ -529,7 +529,7 @@ def test_get_answers(question_id):
             'answers': answers
         })
     except Exception as e:
-        print("Error:", e)
+    
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         cursor.close()
