@@ -373,47 +373,20 @@ def get_teacher_id():
         cursor.close()
         conn.close()
 
-# Student: Submit a question
+# ✅ Submit a question
 @app.route('/api/questions', methods=['POST'])
 def submit_question():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
-        
-        student_id = data.get('student_id')
-        content = data.get('content')
-        teacher_id = data.get('teacher_id')
-        
-        if not student_id or not content or not teacher_id:
-            return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
-        
-        conn = get_connection()
-        if not conn:
-            return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
-        
-        cursor = conn.cursor()
-        try:
-            # Insert the question with teacher_id
-            cursor.execute(
-                "INSERT INTO questions (student_id, content, teacher_id) VALUES (%s, %s, %s)",
-                (student_id, content, teacher_id)
-            )
-            
-            conn.commit()
-            question_id = cursor.lastrowid
-           
-            return jsonify({'status': 'success', 'question_id': question_id}), 201
-        except Exception as e:
-            conn.rollback()
-           
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-        finally:
-            cursor.close()
-            conn.close()
-    except Exception as e:
-       
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    data = request.json
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO questions (student_id, teacher_id, content)
+        VALUES (%s, %s, %s)
+    """, (data['student_id'], data['teacher_id'], data['content']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Question submitted successfully"})
 
 # Teacher: Get all questions
 @app.route('/api/questions', methods=['GET'])
@@ -449,51 +422,22 @@ def get_questions():
         cursor.close()
         conn.close()
 
-# Teacher: Submit an answer
+# ✅ Submit an answer
 @app.route('/api/answers', methods=['POST'])
 def submit_answer():
-    data = request.get_json()
-    question_id = data.get('question_id')
-    teacher_id = data.get('teacher_id')
-    content = data.get('content')
-    
-   
-    
-    if not question_id or not teacher_id or not content:
-        return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
-    
+    data = request.json
     conn = get_connection()
-    if not conn:
-        return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
-    
     cursor = conn.cursor()
-    try:
-        # Insert the answer
-        cursor.execute(
-            "INSERT INTO answers (question_id, teacher_id, content) VALUES (%s, %s, %s)",
-            (question_id, teacher_id, content)
-        )
-       
-        
-        # Update question status to 'answered'
-        cursor.execute(
-            "UPDATE questions SET status = 'answered' WHERE id = %s",
-            (question_id,)
-        )
-       
-        
-        conn.commit()
-        return jsonify({
-            'status': 'success',
-            'message': 'Answer submitted successfully'
-        })
-    except Exception as e:
-        print(f"Error submitting answer: {e}")
-        conn.rollback()
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+    cursor.execute("""
+        INSERT INTO answers (question_id, teacher_id, content)
+        VALUES (%s, %s, %s)
+    """, (data['question_id'], data['teacher_id'], data['content']))
+    cursor.execute("UPDATE questions SET status = 'answered' WHERE id = %s", (data['question_id'],))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({"message": "Answer submitted successfully"})
+
 
 # Test endpoint to check answers for a question
 @app.route('/api/test/answers/<int:question_id>', methods=['GET'])
@@ -535,89 +479,44 @@ def test_get_answers(question_id):
         cursor.close()
         conn.close()
 
-# Student: Get their questions with answers
-@app.route('/api/questions/<int:student_id>', methods=['GET'])
+# ✅ Get questions for a student
+@app.route('/api/questions/student/<int:student_id>', methods=['GET'])
 def get_student_questions(student_id):
     conn = get_connection()
-    if not conn:
-        return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
-    
     cursor = conn.cursor(dictionary=True)
-    try:
-        # Get questions for the student with teacher information
-        cursor.execute("""
-            SELECT q.id, q.content, q.created_at, q.status, q.teacher_id, t.teacher_name
-            FROM questions q
-            LEFT JOIN teachers t ON q.teacher_id = t.user_id
-            WHERE q.student_id = %s
-            ORDER BY q.created_at DESC
-        """, (student_id,))
-        questions = cursor.fetchall()
-        
-        
-        # For each question, get the answer if exists
-        for q in questions:
-            
-            cursor.execute("""
-                SELECT a.content, a.created_at, t.teacher_name 
-                FROM answers a
-                JOIN teachers t ON a.teacher_id = t.user_id
-                WHERE a.question_id = %s
-            """, (q['id'],))
-            answer = cursor.fetchone()
-            
-            # Format datetime for JSON serialization
-            q['created_at'] = q['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-            
-            if answer:
-                answer['created_at'] = answer['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-                q['answer'] = answer
-                
-            else:
-                q['answer'] = None
-                
-        
-       
-        return jsonify(questions)
-    except Exception as e:
-        
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+    cursor.execute("""
+        SELECT q.id, q.content, q.status, q.created_at,
+               a.content AS answer, a.created_at AS answered_at,
+               t.teacher_name
+        FROM questions q
+        JOIN teachers t ON q.teacher_id = t.teacher_id
+        LEFT JOIN answers a ON q.id = a.question_id
+        WHERE q.student_id = %s
+        ORDER BY q.created_at DESC
+    """, (student_id,))
+    questions = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(questions)
 
-# Get questions for a specific teacher
+# ✅ Get questions for a teacher
 @app.route('/api/questions/teacher/<int:teacher_id>', methods=['GET'])
 def get_teacher_questions(teacher_id):
     conn = get_connection()
-    if not conn:
-        return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
-    
     cursor = conn.cursor(dictionary=True)
-    try:
-        cursor.execute("""
-            SELECT q.id, q.student_id, q.content, q.created_at, q.status, q.teacher_id,
-                   s.student_name, t.teacher_name
-            FROM questions q
-            LEFT JOIN student s ON q.student_id = s.user_id
-            LEFT JOIN teachers t ON q.teacher_id = t.user_id
-            WHERE q.teacher_id = %s
-            ORDER BY q.created_at DESC
-        """, (teacher_id,))
-        questions = cursor.fetchall()
-        
-        
-        # Format datetime for JSON serialization
-        for q in questions:
-            q['created_at'] = q['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-        
-        return jsonify(questions)
-    except Exception as e:
-        
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-    finally:
-        cursor.close()
-        conn.close()
+    cursor.execute("""
+        SELECT q.id, q.content, q.status, q.created_at,
+               u.username AS student_name
+        FROM questions q
+        JOIN students s ON q.student_id = s.id
+        JOIN users u ON s.user_id = u.id
+        WHERE q.teacher_id = %s
+        ORDER BY q.created_at DESC
+    """, (teacher_id,))
+    questions = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return jsonify(questions)
 
 # Route to get all available classes
 @app.route('/api/classes', methods=['GET'])
@@ -1035,13 +934,16 @@ def mark_announcement_viewed(announcement_id):
     conn.close()
     return jsonify({"status": "success"})
 
-#Get Teachers
+# ✅ Get all teachers
 @app.route('/teachers', methods=['GET'])
 def get_teachers():
-    """Get all teachers"""
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT teacher_id, teacher_name FROM teachers ORDER BY teacher_name ASC")
+    cursor.execute("""
+        SELECT teacher_id, teacher_name
+        FROM teachers
+        ORDER BY teacher_name ASC
+    """)
     teachers = cursor.fetchall()
     cursor.close()
     conn.close()
