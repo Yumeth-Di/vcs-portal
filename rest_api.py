@@ -499,8 +499,8 @@ def get_student_questions(student_id):
     conn.close()
     return jsonify(questions)
 
-# ✅ Get questions for a teacher
-@app.route('/api/questions/teacher/<int:teacher_id>', methods=['GET'])
+#Get Questions for relavent teacher
+@app.route('/questions/teacher/<int:teacher_id>', methods=['GET'])
 def get_teacher_questions(teacher_id):
     conn = get_connection()
     cursor = conn.cursor(dictionary=True)
@@ -508,7 +508,7 @@ def get_teacher_questions(teacher_id):
         SELECT q.id, q.content, q.status, q.created_at,
                u.username AS student_name
         FROM questions q
-        JOIN students s ON q.student_id = s.id
+        JOIN student s ON q.student_id = s.id_student   
         JOIN users u ON s.user_id = u.id
         WHERE q.teacher_id = %s
         ORDER BY q.created_at DESC
@@ -517,6 +517,7 @@ def get_teacher_questions(teacher_id):
     cursor.close()
     conn.close()
     return jsonify(questions)
+
 
 # Route to get all available classes
 @app.route('/api/classes', methods=['GET'])
