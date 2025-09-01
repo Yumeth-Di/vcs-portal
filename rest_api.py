@@ -1180,6 +1180,24 @@ def upsert_link_for_class():
 
     return {"message": "Link saved", "class": class_name, "url": url}, 201
 
+@app.route('/api/quizzes/<int:quiz_id>', methods=['DELETE'])
+def delete_quiz(quiz_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM quizzes WHERE id=%s", (quiz_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            return jsonify({"message": "Quiz not found"}), 404
+        return jsonify({"message": "Quiz deleted successfully"})
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+
 
 
 if __name__ == '__main__':
